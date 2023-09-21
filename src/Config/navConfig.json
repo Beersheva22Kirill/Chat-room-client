@@ -1,0 +1,12 @@
+{
+   "items": [
+    {"to": "/ChatRoom", "label":"ChatRoom", "users" : ["admin","authorized"]},
+    {"to": "/Groups", "label":"Groups", "users" : ["admin"]},
+    {"to": "/Clients", "label":"Clients", "users" : ["admin"]},
+    {"to": "/SignIn", "label":"SignIn", "users" : ["unauthorized"]},
+    {"to": "/SignOut", "label":"SignOut", "users" : ["admin","authorized"]}
+    
+    ]  
+}
+
+
