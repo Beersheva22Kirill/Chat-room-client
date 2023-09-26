@@ -19,10 +19,10 @@ function getMenuItem(currentUser:UserData):ItemType[]{
     let res:ItemType[];
       if (currentUser.role === 'admin'){
         res = navConfig.items.filter(item => item.users.includes('admin'))
-        //res[res.length - 1].label = currentUser.username
+        res[res.length - 1].label = currentUser.username
       } else if (currentUser.role === 'authorized') {
         res = navConfig.items.filter(item => item.users.includes('authorized'))
-        //res[res.length - 1].label = currentUser.username
+        res[res.length - 1].label = currentUser.username
       } else {
         res = navConfig.items.filter(item => item.users.includes('unauthorized'))
       }

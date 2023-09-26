@@ -27,7 +27,7 @@ const Navigator:React.FC<{navItem:ItemType[]}> = (nav) => {
     }
     
     return  <Box mt ={10}>
-      <AppBar sx = {{backgroundColor:'lightgray'}}>
+      <AppBar sx = {{backgroundColor:'lightgreen'}}>
           <Tabs value={value < nav.navItem.length ? value : 0} onChange={onChangeFn} aria-label="basic tabs example">
             {getTabs()}
           </Tabs>
