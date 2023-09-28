@@ -12,6 +12,7 @@ import ModalWindow from "../Common/ModalWindow";
 import { CSSProperties, useState } from "react";
 import SignUpForm from "../Forms/SignUpForm";
 import { AccountData } from "../../Model/Auth/AccountData";
+import { codeAction } from "../../Redux/Slice/CodeSlice";
 
 const SignIn:React.FC = () => {
     const [activeSignUp, setActiveSignUp] = useState<boolean>(false)
@@ -35,20 +36,12 @@ const SignIn:React.FC = () => {
         const userAuth:UserData|null = await authService.login(user);
         if(userAuth){
             dispatch(userAction.set(userAuth));
-            const socket = chatRoomService.connectWebSocket()
-            socket.onmessage = message => {
-                if(message.data == "Accsess dinied"){
-                    authService.logout();
-                    dispatch(userAction.reset())
-                    console.log("logout: jwt not valid");    
-                }
-            }
             alertMessage.message = 'Authentification success'
         } else {
             alertMessage.code = CodeType.AUTH_ERROR;
             alertMessage.message = 'Accsess dinied'
         }
-
+        dispatch(codeAction.set(alertMessage)) 
     }
 
     async function callBackSignUp(account:AccountData):Promise<void> {

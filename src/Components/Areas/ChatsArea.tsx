@@ -1,9 +1,12 @@
-import { Box, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from "@mui/material"
+import { Box, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from "@mui/material"
 import { CSSProperties } from "react"
+import { ChatType } from "../../Model/ChatsTypes/ChatType"
+import ChatItem from "../ChatRoom/ChatItem"
 
 type Props = {
     username:string,
-    chats:string[]
+    chats:ChatType[],
+    callbackRemove:(id:string) => void
 }
 
 export const ChatsArea:React.FC<Props> = (props) => {
@@ -12,7 +15,7 @@ export const ChatsArea:React.FC<Props> = (props) => {
     display:'flex',
     flexDirection:'row',    
     width:'20vw',
-    height:'80vh',
+    height:'72vh',
     borderStyle:"groove",
     borderColor:'grey',
     backgroundColor: 'background.paper'
@@ -20,23 +23,17 @@ export const ChatsArea:React.FC<Props> = (props) => {
 
 
     function getChats(){
-        return props.chats.map(chat => 
-            <ListItem key={chat} disablePadding>
-              <ListItemButton sx={{width:'20vw'}}>
-                <ListItemText primary={chat} />
-              </ListItemButton>
-            </ListItem>
-        )
+        return props.chats.map(chat => <ChatItem key={chat.idChat} chat={chat} callback={props.callbackRemove}></ChatItem>)
     } 
 
-    //{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }
-
-    return <Box sx={style}>
-    <nav aria-label="secondary mailbox folders">
-      <List>
-        {getChats()}
-      </List>
-    </nav>
-  </Box>
+    return <Box sx={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+      <Typography variant="body1"> My chats</Typography>
+             <Box sx={style}>
+              <List>
+                {getChats()}
+              </List>
+            </Box>
+          </Box>
+    
 
 }
