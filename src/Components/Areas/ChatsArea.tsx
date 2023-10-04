@@ -7,6 +7,7 @@ type Props = {
     username:string,
     chats:ChatType[],
     callbackRemove:(id:string) => void
+    callbackSelect:(chat:ChatType) => void
 }
 
 export const ChatsArea:React.FC<Props> = (props) => {
@@ -23,7 +24,7 @@ export const ChatsArea:React.FC<Props> = (props) => {
 
 
     function getChats(){
-        return props.chats.map(chat => <ChatItem key={chat.idChat} chat={chat} callback={props.callbackRemove}></ChatItem>)
+        return props.chats.map(chat => <ChatItem key={chat.idChat} chat={chat} callbackSelect={props.callbackSelect} callback={props.callbackRemove}></ChatItem>)
     } 
 
     return <Box sx={{display:'flex', flexDirection:'column', alignItems:'center'}}>

@@ -3,7 +3,7 @@ import './App.css';
 import { Alert, Box, Snackbar, Typography } from '@mui/material';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import NavigatorDispather from './Components/Navigators/NavigatorDispather';
-import { useSelectorCode, useSelectorUser } from './Redux/Store';
+import { useSelectorCode, useSelectorCurrentChat, useSelectorUser } from './Redux/Store';
 import { UserData } from './Model/Auth/UserData';
 import { ItemType } from './Model/Menu/ItemType';
 import navConfig from './Config/navConfig.json'
@@ -15,10 +15,11 @@ import SignOut from './Components/Pages/SignOut';
 import { StatusType } from './Model/Alert/StatusType';
 import { CodePayload } from './Model/Alert/CodePayload';
 import CodeType from './Model/Alert/CodeType';
-import { authService } from './Config/service-config';
+import { authService, chatRoomService } from './Config/service-config';
 import { useDispatch } from 'react-redux';
 import { userAction } from './Redux/Slice/AuthSlice';
 import { codeAction } from './Redux/Slice/CodeSlice';
+import { ChatType } from './Model/ChatsTypes/ChatType';
 
 function getMenuItem(currentUser:UserData):ItemType[]{
   
@@ -38,6 +39,8 @@ function getMenuItem(currentUser:UserData):ItemType[]{
 function App() {
   const currentUser:UserData = useSelectorUser();
   const codeMessage:CodePayload = useSelectorCode();
+ 
+
   const dispath = useDispatch()
   const menuItem = useMemo(() => getMenuItem(currentUser),[currentUser])
   const [alertMessage, severity] = useMemo(() => codeProcessing(),[codeMessage]);
@@ -49,6 +52,8 @@ function App() {
     if (codeMessage.code === CodeType.AUTH_ERROR) {
         authService.logout()
         dispath(userAction.reset())
+        chatRoomService.shutDownService()
+   
     }
     setTimeout(() => {
       dispath(codeAction.reset())

@@ -1,4 +1,4 @@
 export type RemoveChatType = {
-    user:string,
+    user:string[],
     chatId:string
 }

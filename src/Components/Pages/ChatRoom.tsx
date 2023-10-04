@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material"
 import { ChatsArea } from "../Areas/ChatsArea";
-import { useSelectorUser } from "../../Redux/Store";
+import { useSelectorCurrentChat, useSelectorCurrentMessages, useSelectorUser } from "../../Redux/Store";
 import { CSSProperties, useEffect, useMemo, useState } from "react";
 import MessageArea from "../Areas/MessageArea";
 import ContactsArea from "../Areas/ContactsArea";
@@ -16,11 +16,19 @@ import { chatsAction } from "../../Redux/Slice/ChatSlice";
 import { NewChat } from "../../Model/ChatsTypes/NewChat";
 import { UserData } from "../../Model/Auth/UserData";
 import { RemoveChatType } from "../../Model/ChatsTypes/RemoveChatType";
+import { currentChatAction } from "../../Redux/Slice/CurrChatSlice";
+import { MessageType } from "../../Model/ChatsTypes/MessageType";
+import { log } from "console";
+import { messagesAction } from "../../Redux/Slice/MessagesSlice";
 
 const ChatRoom:React.FC = () => {
 
+    const currentChat:ChatType|null = useSelectorCurrentChat();
+    const [currChatState,setCurrChatState] = useState<ChatType|null>(null)
     const [allClients,setAllClients] = useState<ClientType[]>([]);
     const [myChats,setMyChats] = useState<ChatType[]>([])
+    const currentUser:UserData = useSelectorUser();
+    const messages:MessageType[] = useSelectorCurrentMessages();
 
     const style:CSSProperties = {
         width:'100%',
@@ -43,7 +51,7 @@ const ChatRoom:React.FC = () => {
         justifyContent:'center'
     }
 
-    const currentUser:UserData = useSelectorUser();
+    
     const dispath = useDispatch()
 
     async function getActiveContacts (){
@@ -62,10 +70,15 @@ const ChatRoom:React.FC = () => {
                 if (typeof chats != 'string') { 
                     setMyChats(chats);
                     dispath(chatsAction.set(chats))
+                    if(!currentChat){
+                        dispath(currentChatAction.set(chats[0]))
+                    }
+                    console.log('Chats downloaded');
                 }   else {
                     setCodeAlert(chats, codeAlert);
                     codeAlert.message = chats 
                 }
+                
                 dispath(codeAction.set(codeAlert))
             },
         })
@@ -77,46 +90,88 @@ const ChatRoom:React.FC = () => {
                 const codeAlert: CodePayload = {code:CodeType.OK,message:''}
                 if(typeof clients != 'string'){
                     setAllClients(clients); 
+                    console.log('Clients dowloaded');
                 } else {
                     setCodeAlert(clients,codeAlert)
                     codeAlert.message = clients 
                 }
-                console.log('clients');
-                
                 dispath(codeAction.set(codeAlert))
             }
         })
 
     },[])
 
+    useEffect(() => {
+        const id = currentChat ? currentChat.idChat : '';
+        const subscription:Subscription = chatRoomService.getChatById(id).subscribe({
+            next(chat:ChatType | string) {
+                const codeAlert: CodePayload = {code:CodeType.OK,message:''}
+                if(typeof chat !='string'){
+                    let allMessages:MessageType[];
+                    if(chat){
+                        allMessages = chat.messages;
+                        console.log('messages dowloaded');
+                    } else {
+                        allMessages = [];
+                    }
+                    dispath(messagesAction.set(allMessages))
+                } else {
+                    setCodeAlert(chat,codeAlert)
+                    codeAlert.message = chat 
+                }
+                dispath(codeAction.set(codeAlert))
+            }
+        })
+       
+    },[currentChat])
+
+
 
     async function createChat(userName:string):Promise<void>{
         const newChat:NewChat = {
-            user_from:currentUser.username,
-            user_to:userName
+            users:[currentUser.username,userName]
         }
         await chatRoomService.createChat(newChat)  
     }
 
     async function removeChat(chatId:string):Promise<void> {
         const removedChat:RemoveChatType = {
-            user:currentUser.username,
+            user:[currentUser.username],
             chatId:chatId
         }
-        await chatRoomService.removeChat(removedChat);
-        console.log(removedChat);
-         
+        if (currentChat?.idChat === removedChat.chatId) {
+            dispath(currentChatAction.reset())
+        }
+        await chatRoomService.removeChat(removedChat);         
     }
 
+    async function selectChat(chat:ChatType) {
+        dispath(currentChatAction.set(chat)) 
+        console.log(currentChat);
+         
+       
+    }
 
+    function sendMessage(message:string){
+        const messageObject:MessageType = {
+            chatId:currentChat!.idChat,
+            from:currentUser.username,
+            type:"MESSAGES",
+            to:[currentChat!.chatName],
+            textMessage:message
+        }
+        chatRoomService.sendMessage(messageObject);
+        console.log(messageObject);
+        
+    }
 
     return <Box sx={styleArea}>
                 <Box sx={styleTitle}>
                     <Typography variant="h6">Welcome:{currentUser.username}</Typography>
                 </Box>
             <Box sx={style}>
-                <ChatsArea username={currentUser.username} chats={myChats} callbackRemove={removeChat}></ChatsArea>
-                <MessageArea messages={[{owner:'user', text:'message 1'}, {owner:'user 2', text:'message 2'}]}></MessageArea>
+                <ChatsArea username={currentUser.username} chats={myChats} callbackSelect={selectChat} callbackRemove={removeChat}></ChatsArea>
+                <MessageArea callbackSend={sendMessage} currentChat={currentChat} messages={messages}></MessageArea>
                 <ContactsArea callback={createChat} contacts={allClients}></ContactsArea>
             </Box> 
         </Box>
@@ -124,8 +179,8 @@ const ChatRoom:React.FC = () => {
 
 export default ChatRoom;
 
-function setCodeAlert(chats: string, codeAlert: CodePayload) {
-    if (chats.includes('Auth')) {
+function setCodeAlert(message: string, codeAlert: CodePayload) {
+    if (message.includes('AUTHENTIFICATION ERROR')) {
         codeAlert.code = CodeType.AUTH_ERROR;
     } else {
         codeAlert.code = CodeType.SERVER_ERROR;

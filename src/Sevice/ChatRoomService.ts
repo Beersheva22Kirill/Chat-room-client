@@ -9,10 +9,42 @@ import { error } from "console";
 import { NewChat } from "../Model/ChatsTypes/NewChat";
 import { RemoveChatType } from "../Model/ChatsTypes/RemoveChatType";
 
+class Cach {
+
+    casheChat:ChatType|undefined;
+
+    addToCache(message:MessageType){
+    
+        this.casheChat?.messages.push(message)
+    }
+
+    addAllToCache(messages:MessageType[]){
+        messages.forEach(message => this.addToCache(message))
+    }
+
+    addChat(chat:ChatType){
+      
+        this.casheChat = JSON.parse(JSON.stringify(chat));
+    }
+
+    getCache():ChatType{
+        
+        return JSON.parse(JSON.stringify(this.casheChat));
+    }
+
+    clearCache(){
+        this.casheChat = undefined;
+    }
+
+}
+
+
 export class ChatRoomService {
 
-    private observable:Observable<MessageType[]|string> | null = null;
-    private subscriber: Subscriber<MessageType[]|string> | undefined = undefined;
+    private cashMessage = new Cach()
+
+    private observableChat:Observable<ChatType|string> | null = null;
+    private chatSubscriber: Subscriber<ChatType|string> | undefined = undefined;
     private clientsObservable:Observable<ClientType[]|string> | null = null;
     private clientsSubscriber: Subscriber<ClientType[]|string> | undefined = undefined;
     private chatsObservable:Observable<ChatType[]|string> | null = null;
@@ -77,7 +109,7 @@ export class ChatRoomService {
             body:JSON.stringify(chat)
         })
         const chatId = await response.json();
-
+        this.cashMessage.clearCache();
         return response.ok ? chatId : null
     }
 
@@ -97,18 +129,36 @@ export class ChatRoomService {
     }
 
 
-    getMessages(chat:ChatType):Observable<MessageType[]|string> { 
+    getChatById(chatId:string):Observable<ChatType|string> { 
 
-        if (!this.observable) {
-            this.observable = new Observable<MessageType[] | string>(subscriber => {
-                this.subscriber = subscriber;
+        if (!this.observableChat) {
+            this.observableChat = new Observable<ChatType | string>(subscriber => {
+                this.chatSubscriber = subscriber;
                 this.connectWebSocket();
-                this.sibscriberAllMessageNext(chat);
+                this.sibscriberChatByIdNext(chatId);
         
                 return () => this.disconectWebSocket();
             })
+        } else {
+            this.sibscriberChatByIdNext(chatId);
         }
-        return this.observable;
+        return this.observableChat;
+    }
+
+    private sibscriberChatByIdNext(chatId:string): void {
+        
+        this.fetchChatById(chatId).then(chat => {               
+                this.cashMessage.clearCache();
+                chat && this.cashMessage.addChat(chat)
+            
+             
+            return this.chatSubscriber?.next(chat);     
+        })
+        .catch(error => this.chatSubscriber?.next(error));
+    }
+
+    sendMessage(message:MessageType){
+        this.webSocket?.send(JSON.stringify(message))
     }
 
     getClients():Observable<ClientType[]|string> { 
@@ -118,6 +168,7 @@ export class ChatRoomService {
                 this.clientsSubscriber = clientsSubscriber;
                 this.connectWebSocket();
                 this.sibscriberAllClientsNext();
+
                 return () => this.disconectWebSocket();
             })
         }
@@ -130,8 +181,7 @@ export class ChatRoomService {
             this.chatsObservable = new Observable<ChatType[] | string>(chatsSubscriber => {
                 this.chatsSubscriber = chatsSubscriber;
                 this.connectWebSocket();
-               this.webSocket && this.sibscriberAllChatsNext();
-                
+                this.sibscriberAllChatsNext();
                 
                 return () => this.disconectWebSocket();
             })
@@ -145,17 +195,25 @@ export class ChatRoomService {
         }).catch(error => this.chatsSubscriber?.next(error))
     }
 
-    private sibscriberAllMessageNext(chat:ChatType): void {
-        
-        this.fetchAllmesseges(chat).then(messages => {
-            return this.subscriber?.next(messages!);     
-        })
-        .catch(error => this.subscriber?.next(error));
-    }
 
-    async fetchAllmesseges(chat:ChatType){
-        //TODO
-        //const messages:MessageType[] = fetch()
+
+    async fetchChatById(chatId:string|undefined){
+        let chat;
+        try {
+            if(chatId){
+                chat = await fetch(`${this.urlService}/chats/chat/${chatId}`,{
+                    method:"GET",
+                    headers:{
+                        Authorization: `Bearer ${localStorage.getItem(AUTH_DATA_JWT) || ''}`}
+                }).then(data => data.json());
+            }
+            
+        } catch (error:any) {
+            chat = error.message
+        } finally {
+            return chat
+        }
+        
     }
 
     private sibscriberAllClientsNext(): void {
@@ -174,29 +232,44 @@ export class ChatRoomService {
 
         this.webSocket.onmessage = message => {
             console.log(message.data);
-            const notification:NotificationType = JSON.parse(message.data);
+            const notification:MessageType = JSON.parse(message.data);
             this.getAction(notification)
     } 
       return this.webSocket;
     }
 
     disconectWebSocket(): void {
-        this.webSocket?.close();
-        this.webSocket = undefined;
+        this.shutDownService();
     }
 
-    private getAction(message:NotificationType){
+    shutDownService(){
+        this.chatsObservable = null;
+        this.clientsObservable = null;
+        this.observableChat = null;
+        this.webSocket?.close();
+        this.webSocket = undefined;
 
-        switch (message.textMessage) {
-            case 'client': this.sibscriberAllClientsNext(); break;
-            case 'chats': this.sibscriberAllChatsNext(); break;
-            case 'Authentification error' : {
-                this.clientsSubscriber?.next(message.textMessage)
-                this.chatsSubscriber?.next(message.textMessage)
+    }
+
+    private getAction(message:MessageType){
+
+        switch (message.type) {
+            case 'SERVER_CLIENT': {
+                this.sibscriberAllClientsNext(); 
+            }; break;
+            case 'SERVER_CHATS': {
+                    this.sibscriberAllChatsNext()
+                }; break;
+            case 'AUTHENTIFICATION ERROR' : {
+                this.clientsSubscriber?.next(message.type)
+                this.chatsSubscriber?.next(message.type)
+                this.chatSubscriber?.next(message.type)
             };break;
-            case `Accsess dinied` : {
-                this.clientsSubscriber?.next(message.textMessage)
-                this.chatsSubscriber?.next(message.textMessage)
+            case "MESSAGES" : {
+                if(this.cashMessage.casheChat && this.cashMessage.getCache().idChat == message.chatId){
+                    this.cashMessage.addToCache(message);
+                    this.chatSubscriber?.next(this.cashMessage.getCache())
+                }
             };break;
             
             default:
