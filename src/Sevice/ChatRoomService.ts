@@ -101,16 +101,23 @@ export class ChatRoomService {
     }
 
     async removeChat(chat:RemoveChatType){
-        const response = await fetch(this.urlService + '/chats/remove-chat',{
-            method:'POST',
-            headers: {
-                'Content-type':"application/json",
-                Authorization: `Bearer ${localStorage.getItem(AUTH_DATA_JWT) || ''}`},
-            body:JSON.stringify(chat)
-        })
-        const chatId = await response.json();
-        this.cashMessage.clearCache();
-        return response.ok ? chatId : null
+        let chatId;
+        try {
+            const response = await fetch(this.urlService + '/chats/remove-chat',{
+                method:'POST',
+                headers: {
+                    'Content-type':"application/json",
+                    Authorization: `Bearer ${localStorage.getItem(AUTH_DATA_JWT) || ''}`},
+                body:JSON.stringify(chat)
+            })
+            chatId = await response.json();
+        } catch (error:any) {
+               console.log(error.message);
+               chatId = error.message
+        }finally{
+            return chatId ? chatId: null
+        }
+        
     }
 
     async getMyChats():Promise<ChatType[]|string>{
@@ -249,6 +256,10 @@ export class ChatRoomService {
         this.webSocket?.close();
         this.webSocket = undefined;
 
+    }
+
+    clearChacheMessage(){
+        this.cashMessage.clearCache()
     }
 
     private getAction(message:MessageType){

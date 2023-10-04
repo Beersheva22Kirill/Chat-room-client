@@ -12,8 +12,6 @@ type Props ={
 }
 const MessageArea:React.FC<Props> = (props) => {
 
-    const currentChat:ChatType|null = useSelectorCurrentChat();
-
     const style:CSSProperties = {
         marginLeft:3,
         marginRight:3,
@@ -56,7 +54,7 @@ const MessageArea:React.FC<Props> = (props) => {
     </Box>
     <Box component={'form'} sx={sendGroupStyle} onSubmit={onsubmit}>
         <TextField sx={{width:'88%',height:'5px'}} variant="outlined" size="small" name="message_field"></TextField>
-        <Button disabled = {currentChat == null} type="submit" variant="contained" sx={{backgroundColor:'lightgreen',height:'39px',marginLeft:1}}>Send</Button>
+        <Button disabled = {props.currentChat == null} type="submit" variant="contained" sx={{backgroundColor:'lightgreen',height:'39px',marginLeft:1}}>Send</Button>
     </Box>
     
     </Box>

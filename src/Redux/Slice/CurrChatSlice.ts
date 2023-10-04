@@ -1,9 +1,9 @@
 import {createSlice} from "@reduxjs/toolkit"
 import { ChatType } from "../../Model/ChatsTypes/ChatType"
 
-const defaultChat = null
+const defaultChat = undefined
 
-const initialState:{currentChat:ChatType|null} = {
+const initialState:{currentChat:ChatType|undefined} = {
     currentChat:defaultChat
 };
 

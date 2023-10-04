@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material"
 import { ChatsArea } from "../Areas/ChatsArea";
-import { useSelectorCurrentChat, useSelectorCurrentMessages, useSelectorUser } from "../../Redux/Store";
+import { useSelectorChats, useSelectorCurrentChat, useSelectorCurrentMessages, useSelectorUser } from "../../Redux/Store";
 import { CSSProperties, useEffect, useMemo, useState } from "react";
 import MessageArea from "../Areas/MessageArea";
 import ContactsArea from "../Areas/ContactsArea";
@@ -23,10 +23,9 @@ import { messagesAction } from "../../Redux/Slice/MessagesSlice";
 
 const ChatRoom:React.FC = () => {
 
-    const currentChat:ChatType|null = useSelectorCurrentChat();
-    const [currChatState,setCurrChatState] = useState<ChatType|null>(null)
     const [allClients,setAllClients] = useState<ClientType[]>([]);
-    const [myChats,setMyChats] = useState<ChatType[]>([])
+    const [allChats, setAllChats] = useState<ChatType[]>([])
+    const [currentChat, setCurrentChat] = useState<ChatType|null>(null)
     const currentUser:UserData = useSelectorUser();
     const messages:MessageType[] = useSelectorCurrentMessages();
 
@@ -67,13 +66,9 @@ const ChatRoom:React.FC = () => {
         const subscriptionChat:Subscription = chatRoomService.getAllMyChats().subscribe({
             next(chats:ChatType[]|string) {
                 const codeAlert: CodePayload = {code:CodeType.OK,message:''}
-                if (typeof chats != 'string') { 
-                    setMyChats(chats);
-                    dispath(chatsAction.set(chats))
-                    if(!currentChat){
-                        dispath(currentChatAction.set(chats[0]))
-                    }
-                    console.log('Chats downloaded');
+                if (typeof chats != 'string') {  
+                    console.log('chats');   
+                    setAllChats(chats)                     
                 }   else {
                     setCodeAlert(chats, codeAlert);
                     codeAlert.message = chats 
@@ -125,8 +120,6 @@ const ChatRoom:React.FC = () => {
        
     },[currentChat])
 
-
-
     async function createChat(userName:string):Promise<void>{
         const newChat:NewChat = {
             users:[currentUser.username,userName]
@@ -139,17 +132,19 @@ const ChatRoom:React.FC = () => {
             user:[currentUser.username],
             chatId:chatId
         }
+
         if (currentChat?.idChat === removedChat.chatId) {
-            dispath(currentChatAction.reset())
-        }
-        await chatRoomService.removeChat(removedChat);         
+            setCurrentChat(null)
+            chatRoomService.clearChacheMessage()
+         }
+
+        await chatRoomService.removeChat(removedChat); 
+        
+        
     }
 
-    async function selectChat(chat:ChatType) {
-        dispath(currentChatAction.set(chat)) 
-        console.log(currentChat);
-         
-       
+    function selectChat(chat:ChatType) {
+        setCurrentChat(chat)  
     }
 
     function sendMessage(message:string){
@@ -160,9 +155,7 @@ const ChatRoom:React.FC = () => {
             to:[currentChat!.chatName],
             textMessage:message
         }
-        chatRoomService.sendMessage(messageObject);
-        console.log(messageObject);
-        
+        chatRoomService.sendMessage(messageObject);        
     }
 
     return <Box sx={styleArea}>
@@ -170,7 +163,7 @@ const ChatRoom:React.FC = () => {
                     <Typography variant="h6">Welcome:{currentUser.username}</Typography>
                 </Box>
             <Box sx={style}>
-                <ChatsArea username={currentUser.username} chats={myChats} callbackSelect={selectChat} callbackRemove={removeChat}></ChatsArea>
+                <ChatsArea username={currentUser.username} chats={allChats} callbackSelect={selectChat} callbackRemove={removeChat}></ChatsArea>
                 <MessageArea callbackSend={sendMessage} currentChat={currentChat} messages={messages}></MessageArea>
                 <ContactsArea callback={createChat} contacts={allClients}></ContactsArea>
             </Box> 
