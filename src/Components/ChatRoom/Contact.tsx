@@ -1,11 +1,11 @@
-import { Image } from "@mui/icons-material";
+import { Image, ModeCommentOutlined } from "@mui/icons-material";
 import { Box, Button, ListItem, ListItemButton, ListItemText, Typography } from "@mui/material";
 import { CSSProperties, useEffect, useState } from "react";
 import { ClientType } from "../../Model/Accounts/ClientType";
 import { useSelectorChats, useSelectorUser } from "../../Redux/Store";
 import { log } from "console";
 import { UserData } from "../../Model/Auth/UserData";
-import { ChatType } from "../../Model/ChatsTypes/ChatType";
+import { Chat } from "../../Model/ChatsTypes/Chat";
 
 
 type Props = {
@@ -14,9 +14,10 @@ type Props = {
 }
 
 const Contact:React.FC<Props> = (props) => {
-
+    
+const [color, setColor] = useState<string>('grey')
 const [disabled,setDisabled] = useState<boolean>(false);
-const myChats:ChatType[] = useSelectorChats();
+const myChats:Chat[] = useSelectorChats();
 
 
     const style:CSSProperties = {
@@ -42,15 +43,19 @@ const myChats:ChatType[] = useSelectorChats();
         
  
 
-    return <ListItem sx = {{display:'flex',flexDirection:'row',alignItems:'center'}} key={props.contact.username} disablePadding>
-                <Box sx = {{display:'flex',flexDirection:'row',alignItems:'center'}}>
-                    <ListItemText sx = {style} primary={props.contact.username} />
+    return <ListItem sx = {{display:'flex',flexDirection:'row'}} key={props.contact.username} disablePadding>
+                <Box sx = {{display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'left', minWidth: '50%'}}>
                     <Box sx = {styleBox}></Box>
+                    <ListItemText sx = {style} primary={props.contact.username} />
                 </Box> 
-                <Box sx={{marginLeft:2}}>
-                    <Button disabled = {disabled} onClick={onClick} variant="text">Begin chat</Button>
+                <Box onClick = {onClick} 
+                onMouseDown = {() => setColor("grey")} 
+                onMouseUp= {() => setColor("Black")} 
+                onMouseMove={() => setColor('black')} 
+                onMouseOut={() => setColor("grey")}>
+                <ModeCommentOutlined htmlColor={color}></ModeCommentOutlined>
                 </Box>
-            </ListItem>              
+             </ListItem>              
 } 
 
 export default Contact;

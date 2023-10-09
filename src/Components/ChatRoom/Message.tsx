@@ -14,13 +14,34 @@ const Message:React.FC<Props> = (props) => {
 
     const style:CSSProperties = {
         display:'flex',
-        justifyContent: props.message.from == currentUser.username ? 'right' : 'left',
-        margin:1
+        flexDirection:'column',
+        margin:1,
+        marginLeft:2,
+        marginRight:2,
+        backgroundColor: props.message.from == currentUser.username ? 'lightgreen' : 'lightgrey',
+        paddingLeft:2,
+        paddingRight:2,
+        paddingTop:0.3,
+        paddingBottom:0.3,
+        borderRadius:2.5
     }
 
-    return <Box sx={style}>
-        <Box>
-            <Typography variant="caption" >{props.message.textMessage}</Typography>
+    const mainStyle:CSSProperties = {
+        width:'100%',
+        display:'flex',
+        justifyContent: props.message.from == currentUser.username ? 'right' : 'left'
+    }
+
+    function getDate(date:string){
+          
+        return new Date(Number.parseInt(date)).toLocaleTimeString();
+    }
+
+    return <Box sx={mainStyle}>
+        <Box sx={style}>
+        <Typography variant="caption">{props.message.from}</Typography>
+            <Typography variant="caption" sx={{fontWeight:'bold',fontStyle:'italic'}}>{props.message.textMessage}</Typography>
+            <Typography variant="caption" sx={{fontSize:"0.6em"}}>{getDate(props.message.date)}</Typography>
         </Box>
         
     </Box>

@@ -2,16 +2,17 @@ import { Observable, Subscriber } from "rxjs";
 import { AUTH_DATA_JWT, LOCAL_STORAGE_ITEM_USER } from "../Config/service-config";
 import { UserData } from "../Model/Auth/UserData";
 import { MessageType } from "../Model/ChatsTypes/MessageType";
-import { ChatType } from "../Model/ChatsTypes/ChatType";
+import { Chat } from "../Model/ChatsTypes/Chat";
 import { ClientType } from "../Model/Accounts/ClientType";
 import { NotificationType } from "../Model/Notification/NotificationType";
 import { error } from "console";
 import { NewChat } from "../Model/ChatsTypes/NewChat";
 import { RemoveChatType } from "../Model/ChatsTypes/RemoveChatType";
+import { NewGroupe } from "../Model/ChatsTypes/NewGroupe";
 
 class Cach {
 
-    casheChat:ChatType|undefined;
+    casheChat:Chat|undefined;
 
     addToCache(message:MessageType){
     
@@ -22,12 +23,12 @@ class Cach {
         messages.forEach(message => this.addToCache(message))
     }
 
-    addChat(chat:ChatType){
+    addChat(chat:Chat){
       
         this.casheChat = JSON.parse(JSON.stringify(chat));
     }
 
-    getCache():ChatType{
+    getCache():Chat{
         
         return JSON.parse(JSON.stringify(this.casheChat));
     }
@@ -43,12 +44,12 @@ export class ChatRoomService {
 
     private cashMessage = new Cach()
 
-    private observableChat:Observable<ChatType|string> | null = null;
-    private chatSubscriber: Subscriber<ChatType|string> | undefined = undefined;
+    private observableChat:Observable<Chat|string> | null = null;
+    private chatSubscriber: Subscriber<Chat|string> | undefined = undefined;
     private clientsObservable:Observable<ClientType[]|string> | null = null;
     private clientsSubscriber: Subscriber<ClientType[]|string> | undefined = undefined;
-    private chatsObservable:Observable<ChatType[]|string> | null = null;
-    private chatsSubscriber: Subscriber<ChatType[]|string> | undefined = undefined;
+    private chatsObservable:Observable<Chat[]|string> | null = null;
+    private chatsSubscriber: Subscriber<Chat[]|string> | undefined = undefined;
     
     private urlService:string;
     private urlWebSocket:string;
@@ -100,6 +101,20 @@ export class ChatRoomService {
         return response.ok ? chatId : null
     }
 
+    async createGroupe(groupe:NewGroupe):Promise<string|null>{
+        
+        const response = await fetch(this.urlService + '/groupe/create-groupe',{
+            method:'POST',
+            headers: {
+                'Content-type':"application/json",
+                Authorization: `Bearer ${localStorage.getItem(AUTH_DATA_JWT) || ''}`},
+            body:JSON.stringify(groupe)
+        })
+        const chatId = await response.json();
+
+        return response.ok ? chatId : null
+    }
+
     async removeChat(chat:RemoveChatType){
         let chatId;
         try {
@@ -120,8 +135,8 @@ export class ChatRoomService {
         
     }
 
-    async getMyChats():Promise<ChatType[]|string>{
-        let chats:ChatType[]|string
+    async getMyChats():Promise<Chat[]|string>{
+        let chats:Chat[]|string
 
         try {
             chats = await fetch(this.urlService + '/chats/mychats',{
@@ -136,10 +151,10 @@ export class ChatRoomService {
     }
 
 
-    getChatById(chatId:string):Observable<ChatType|string> { 
+    getChatById(chatId:string):Observable<Chat|string> { 
 
         if (!this.observableChat) {
-            this.observableChat = new Observable<ChatType | string>(subscriber => {
+            this.observableChat = new Observable<Chat | string>(subscriber => {
                 this.chatSubscriber = subscriber;
                 this.connectWebSocket();
                 this.sibscriberChatByIdNext(chatId);
@@ -165,6 +180,7 @@ export class ChatRoomService {
     }
 
     sendMessage(message:MessageType){
+
         this.webSocket?.send(JSON.stringify(message))
     }
 
@@ -182,10 +198,10 @@ export class ChatRoomService {
         return this.clientsObservable;
     }
 
-    getAllMyChats():Observable<ChatType[]|string> { 
+    getAllMyChats():Observable<Chat[]|string> { 
 
         if (!this.chatsObservable) {
-            this.chatsObservable = new Observable<ChatType[] | string>(chatsSubscriber => {
+            this.chatsObservable = new Observable<Chat[] | string>(chatsSubscriber => {
                 this.chatsSubscriber = chatsSubscriber;
                 this.connectWebSocket();
                 this.sibscriberAllChatsNext();
@@ -276,17 +292,22 @@ export class ChatRoomService {
                 this.chatsSubscriber?.next(message.type)
                 this.chatSubscriber?.next(message.type)
             };break;
-            case "MESSAGES" : {
-                if(this.cashMessage.casheChat && this.cashMessage.getCache().idChat == message.chatId){
-                    this.cashMessage.addToCache(message);
-                    this.chatSubscriber?.next(this.cashMessage.getCache())
-                }
+            case "CHAT MESSAGES" : {
+                this.setNextCacheMessages(message);
             };break;
-            
+            case "GROUPE MESSAGES" : {
+                this.setNextCacheMessages(message);
+            };break;
             default:
                 break;
         }
 
     }
 
+    private setNextCacheMessages(message: MessageType) {
+        if (this.cashMessage.casheChat && this.cashMessage.getCache().idChat == message.chatId) {
+            this.cashMessage.addToCache(message);
+            this.chatSubscriber?.next(this.cashMessage.getCache());
+        }
+    }
 }

@@ -2,15 +2,19 @@ import { Box, Button, TextField, Typography } from "@mui/material"
 import Message from "../ChatRoom/Message"
 import { CSSProperties } from "react"
 import { MessageType } from "../../Model/ChatsTypes/MessageType"
-import { useSelectorCurrentChat } from "../../Redux/Store"
-import { ChatType } from "../../Model/ChatsTypes/ChatType"
+import { useSelectorCurrentChat, useSelectorUser } from "../../Redux/Store"
+import { Chat } from "../../Model/ChatsTypes/Chat"
+import { UserData } from "../../Model/Auth/UserData"
 
 type Props ={
+    visible:boolean,
     messages:MessageType[],
-    currentChat:ChatType|null,
+    currentChat:Chat|null,
     callbackSend:(message:string) => void
 }
 const MessageArea:React.FC<Props> = (props) => {
+
+    const currentUser:UserData = useSelectorUser();
 
     const style:CSSProperties = {
         marginLeft:3,
@@ -35,6 +39,13 @@ const MessageArea:React.FC<Props> = (props) => {
         marginTop:1
     }
 
+    const styleTitle:CSSProperties = {
+        display:'flex',
+        flexDirection:'row',
+        justifyContent:'center',
+        marginTop:0.6
+    }
+
     function getMessages(){
         return props.messages.map((message,index) => {
             return <Message key={index} message={message}></Message>
@@ -47,16 +58,21 @@ const MessageArea:React.FC<Props> = (props) => {
         props.callbackSend(`${formData.get('message_field')}`);
     }
 
-    return <Box sx={{display:'flex', flexDirection:'column', alignItems:'center'}}>
-    <Typography variant="body1">{`Messages: ${props.currentChat ? props.currentChat.chatName : "No selected chat"}`}</Typography>
-        <Box sx={style}>
-        {getMessages()}
-    </Box>
-    <Box component={'form'} sx={sendGroupStyle} onSubmit={onsubmit}>
-        <TextField sx={{width:'88%',height:'5px'}} variant="outlined" size="small" name="message_field"></TextField>
-        <Button disabled = {props.currentChat == null} type="submit" variant="contained" sx={{backgroundColor:'lightgreen',height:'39px',marginLeft:1}}>Send</Button>
-    </Box>
-    
+    return <Box>
+        {props.visible && 
+        <Box sx={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+            <Box sx={styleTitle}>
+                    <Typography variant="h6">Welcome:{currentUser.username}</Typography>
+            </Box>
+            <Typography variant="body1">{`Messages: ${props.currentChat ? props.currentChat.chatName : "No selected chat"}`}</Typography>
+             <Box sx={style}>
+                {getMessages()}
+            </Box>
+            <Box component={'form'} sx={sendGroupStyle} onSubmit={onsubmit}>
+                <TextField sx={{width:'88%',height:'5px'}} variant="outlined" size="small" name="message_field"></TextField>
+                <Button disabled = {props.currentChat == null} type="submit" variant="contained" sx={{backgroundColor:'lightgreen',height:'39px',marginLeft:1}}>Send</Button>
+            </Box>
+        </Box>}
     </Box>
 }
 

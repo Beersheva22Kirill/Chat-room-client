@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { codeReducer } from "./Slice/CodeSlice";
 import { CodePayload } from "../Model/Alert/CodePayload";
 import { chatsReducer } from "./Slice/ChatSlice";
-import { ChatType } from "../Model/ChatsTypes/ChatType";
+import { Chat } from "../Model/ChatsTypes/Chat";
 import { currentChatReducer } from "./Slice/CurrChatSlice";
 import { messagesReduser } from "./Slice/MessagesSlice";
 import { MessageType } from "../Model/ChatsTypes/MessageType";
@@ -29,11 +29,11 @@ export function useSelectorCode() {
 }
 
 export function useSelectorChats() {
-    return useSelector<any,ChatType[]>(state => state.chatsState.initialChats)
+    return useSelector<any,Chat[]>(state => state.chatsState.initialChats)
 }
 
 export function useSelectorCurrentChat() {
-    return useSelector<any,ChatType>(state => state.currChat.currentChat)
+    return useSelector<any,Chat>(state => state.currChat.currentChat)
 }
 
 export function useSelectorCurrentMessages() {

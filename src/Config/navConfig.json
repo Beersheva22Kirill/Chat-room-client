@@ -1,8 +1,8 @@
 {
    "items": [
     {"to": "/ChatRoom", "label":"ChatRoom", "users" : ["admin","authorized"]},
-    {"to": "/Groups", "label":"Groups", "users" : ["admin"]},
-    {"to": "/Clients", "label":"Clients", "users" : ["admin"]},
+    {"to": "/Groups", "label":"Groups", "users" : []},
+    {"to": "/Clients", "label":"Clients", "users" : []},
     {"to": "/SignIn", "label":"SignIn", "users" : ["unauthorized"]},
     {"to": "/SignOut", "label":"SignOut", "users" : ["admin","authorized"]}
     

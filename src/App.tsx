@@ -19,7 +19,6 @@ import { authService, chatRoomService } from './Config/service-config';
 import { useDispatch } from 'react-redux';
 import { userAction } from './Redux/Slice/AuthSlice';
 import { codeAction } from './Redux/Slice/CodeSlice';
-import { ChatType } from './Model/ChatsTypes/ChatType';
 
 function getMenuItem(currentUser:UserData):ItemType[]{
   

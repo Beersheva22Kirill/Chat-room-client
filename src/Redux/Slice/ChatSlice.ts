@@ -1,9 +1,9 @@
-import { ChatType } from "../../Model/ChatsTypes/ChatType";
+import { Chat } from "../../Model/ChatsTypes/Chat";
 import {createSlice} from'@reduxjs/toolkit';
 
-const chats:ChatType[] = [];
+const chats:Chat[] = [];
 
-const initialState:{initialChats:ChatType[]} = {
+const initialState:{initialChats:Chat[]} = {
     initialChats:chats
 }
 

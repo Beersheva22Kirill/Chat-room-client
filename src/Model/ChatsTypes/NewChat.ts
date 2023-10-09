@@ -1,3 +1,6 @@
+import { TypeChat } from "./TypeChat"
+
 export type NewChat = {
-        users:[string,string]
+        type:TypeChat,
+        users:string[]
 }
